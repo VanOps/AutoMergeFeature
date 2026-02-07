@@ -1,0 +1,74 @@
+---
+name: ✨ Feature Auto-Merge
+
+on:
+  pull_request:
+    types: [labeled, unlabeled, synchronize, opened, edited, ready_for_review]
+    branches:
+      - main
+      - develop
+
+permissions:
+  contents: write
+  pull-requests: write
+  checks: read
+
+jobs:
+  automerge:
+    name: 🤖 Auto-Merge Feature PR
+    runs-on: ubuntu-latest
+    if: |
+      github.event.pull_request.draft == false &&
+      contains(github.event.pull_request.labels.*.name, 'ready-to-merge') &&
+      !contains(github.event.pull_request.labels.*.name, 'do-not-merge')
+    
+    steps:
+      - name: 📝 PR Info
+        run: |
+          echo "PR #${{ github.event.pull_request.number }}: ${{ github.event.pull_request.title }}"
+          echo "Branch: ${{ github.head_ref }} → ${{ github.base_ref }}"
+          echo "Author: ${{ github.event.pull_request.user.login }}"
+      
+      - name: ⏳ Wait for CI checks
+        uses: fountainhead/action-wait-for-check@v1.2.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          checkName: "🧪 Run Tests"
+          ref: ${{ github.event.pull_request.head.sha }}
+          timeoutSeconds: 600
+      
+      - name: 👀 Check approvals
+        id: reviews
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: reviews } = await github.rest.pulls.listReviews({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number
+            });
+            
+            const approvals = reviews.filter(r => r.state === 'APPROVED').length;
+            const requiredApprovals = 1;
+            
+            console.log(`Approvals: ${approvals}/${requiredApprovals}`);
+            
+            if (approvals >= requiredApprovals) {
+              core.setOutput('approved', 'true');
+              console.log('✅ PR has sufficient approvals');
+            } else {
+              core.setFailed(`❌ Need ${requiredApprovals} approvals, got ${approvals}`);
+            }
+      
+      - name: 🔀 Enable auto-merge
+        if: steps.reviews.outputs.approved == 'true'
+        run: gh pr merge --auto --squash "$PR_NUMBER"
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: 📢 Notify success
+        if: success()
+        run: |
+          echo "✅ Auto-merge enabled for PR #${{ github.event.pull_request.number }}"
+          echo "Will merge automatically once all checks pass"
