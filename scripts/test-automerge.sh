@@ -173,3 +173,12 @@ echo "Ahora crea el PR manualmente con:"
 echo ""
 echo "  gh pr create --base main --head $BRANCH_NAME"
 echo ""
+
+# Crea la PR automáticamente (opcional)
+read -p "¿Crear PR automáticamente? (y/n): " CREATE_PR
+if [ "$CREATE_PR" = "y" ]; then
+  gh pr create --base main --head $BRANCH_NAME --title "$DESCRIPTION" --body "This is a test PR to validate GitHub Auto-Merge functionality."
+  echo -e "  ${GREEN}✅${NC} PR creada automáticamente"
+else
+  echo "PR no creada. Puedes crearla manualmente con el comando anterior."
+fi
