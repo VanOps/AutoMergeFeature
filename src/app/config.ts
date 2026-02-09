@@ -1,5 +1,3 @@
-// Configuration file for feature auto-merge testing
-
 export const APP_CONFIG = {
   name: 'AutoMerge Feature Test',
   version: '1.0.0',
