@@ -1,14 +1,14 @@
 # Automerge de Features - Implementación de Ejemplo
 
-Este submódulo contiene una implementación completa de la estrategia de **Feature AutoMerge** usando GitHub Actions y labels.
+Este submódulo contiene una implementación completa de la estrategia de **Feature AutoMerge** usando la funcionalidad nativa de auto-merge de GitHub, validada con CI/CD.
 
 ## ✅ Estado del Submódulo
 
 - ✅ Aplicación Next.js en `/src/app`
-- ✅ Workflows de GitHub Actions (`.github/workflows/`)
-- ✅ Sistema de auto-labeling
-- ✅ Script de creación de labels
-- ✅ CI configurado para validar Next.js
+- ✅ CI/CD configurado (`.github/workflows/ci.yml`)
+- ✅ Sistema de auto-labeling (opcional)
+- ✅ Scripts de validación y testing
+- ✅ **Auto-merge nativo de GitHub** (no requiere workflow adicional)
 
 ## 📁 Estructura del Proyecto
 
@@ -16,9 +16,8 @@ Este submódulo contiene una implementación completa de la estrategia de **Feat
 .
 ├── .github/
 │   ├── workflows/
-│   │   ├── feature-automerge.yml  # Workflow principal de automerge
 │   │   ├── ci.yml                 # CI/CD para validar cambios
-│   │   └── auto-label.yml         # Auto-etiquetado de PRs
+│   │   └── auto-label.yml         # Auto-etiquetado de PRs (opcional)
 │   └── labeler.yml                # Configuración de labels
 ├── src/
 │   └── app/                       # Aplicación Next.js de ejemplo
@@ -27,10 +26,31 @@ Este submódulo contiene una implementación completa de la estrategia de **Feat
 │       └── package.json           # Dependencias de Next.js
 ├── scripts/
 │   ├── check_repo_config.sh       # Validar configuración del repositorio
-│   ├── create-labels.sh           # Script para crear labels en GitHub
+│   ├── create-labels.sh           # Script para crear labels en GitHub (opcional)
 │   └── test-automerge.sh          # Script para ejecutar prueba completa
 └── README.md
 ```
+
+## 🎯 Concepto: Auto-Merge Nativo de GitHub
+
+Esta estrategia utiliza la **funcionalidad nativa de auto-merge de GitHub**, sin necesidad de workflows adicionales:
+
+- ✅ **Simple**: Configuración directa en GitHub Settings
+- ✅ **Nativa**: Usa funcionalidad built-in de GitHub
+- ✅ **Eficiente**: No consume minutos de GitHub Actions adicionales
+- ✅ **Flexible**: Controlado vía Branch Protection Rules
+
+### ¿Cómo funciona?
+
+1. Developer crea PR y lo marca listo
+2. CI ejecuta automáticamente (lint, build, security)
+3. Reviewer aprueba el PR
+4. Developer (o reviewer) habilita auto-merge: `gh pr merge --auto --squash <PR>`
+5. **GitHub fusiona automáticamente** cuando:
+   - ✅ Todos los CI checks pasan
+   - ✅ Tiene aprobaciones requeridas
+   - ✅ Rama está actualizada
+   - ✅ No hay conflictos
 
 ## 🚀 Inicio Rápido
 
@@ -55,12 +75,12 @@ El script `test-automerge.sh` hará automáticamente:
 
 - ✅ Crear una rama de feature
 - ✅ Hacer un cambio de prueba
-- ✅ Crear un PR con el label `ready-to-merge`
+- ✅ Crear un PR
 - ✅ Esperar a que CI pase (opcional)
 - ✅ Aprobar el PR automáticamente (opcional)
-- ✅ Activar auto-merge
+- ✅ **Habilitar auto-merge nativo**
 
-**Resultado esperado**: El PR se fusionará automáticamente cuando todos los checks pasen.
+**Resultado esperado**: GitHub fusionará el PR automáticamente cuando todos los checks pasen.
 
 ---
 
@@ -73,47 +93,15 @@ El script `test-automerge.sh` hará automáticamente:
 Ir a **Settings > General > Pull Requests**:
 
 - ☑ **Allow auto-merge**
+- ☑ **Automatically delete head branches** (opcional)
 
-#### B. Permisos de GitHub Actions
+#### B. Permisos de GitHub Actions (solo para CI)
 
 Ir a **Settings > Actions > General > Workflow permissions**:
 
-- ☑ **Read and write permissions**
-- ☑ **Allow GitHub Actions to create and approve pull requests**
+- ☑ **Read and write permissions** (para que CI pueda ejecutarse)
 
-### 2. Crear Labels (2 minutos)
-
-Ejecutar desde el directorio del submódulo:
-
-```bash
-cd AutoMergeFeature
-./scripts/create-labels.sh
-```
-
-Esto creará automáticamente:
-
-**Labels de Control**:
-
-- `ready-to-merge` (verde) - Habilita automerge
-- `do-not-merge` (rojo) - Bloquea automerge
-- `breaking-change` (rojo oscuro) - Cambios que rompen API
-- `needs-review` (amarillo) - Requiere revisión adicional
-
-**Labels Automáticos**:
-
-- `documentation`, `dependencies`, `ci/cd`, `frontend`, `config`
-- `size/xs`, `size/s`, `size/m`, `size/l`, `size/xl`
-
-O créalos manualmente con `gh` CLI:
-
-```bash
-gh label create "ready-to-merge" --color "0e8a16" --description "Ready for automatic merge"
-gh label create "do-not-merge" --color "b60205" --description "Block automatic merge"
-gh label create "breaking-change" --color "d73a4a" --description "Breaking changes"
-gh label create "needs-review" --color "fbca04" --description "Requires additional review"
-```
-
-### 3. Configurar Branch Protection (5 minutos)
+### 2. Configurar Branch Protection (5 minutos)
 
 **Settings > Branches > Add branch protection rule**:
 

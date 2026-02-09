@@ -41,41 +41,6 @@ fi
 echo -e "${GREEN}📁 Repositorio: $REPO${NC}"
 echo ""
 
-# Verificar que labels existen
-echo -e "${BLUE}🔍 Verificando labels requeridos...${NC}"
-REQUIRED_LABELS=("ready-to-merge" "do-not-merge")
-MISSING_LABELS=0
-
-for label in "${REQUIRED_LABELS[@]}"; do
-  if gh label list --json name -q ".[] | select(.name==\"$label\") | .name" | grep -q "$label"; then
-    echo -e "  ${GREEN}✅${NC} $label existe"
-  else
-    echo -e "  ${RED}❌${NC} $label no existe"
-    MISSING_LABELS=$((MISSING_LABELS + 1))
-  fi
-done
-
-if [ $MISSING_LABELS -gt 0 ]; then
-  echo ""
-  echo -e "${YELLOW}⚠️  Faltan labels. Ejecuta primero:${NC}"
-  echo "   ./scripts/create-labels.sh"
-  echo ""
-  read -p "¿Quieres crear los labels ahora? (y/n): " CREATE_LABELS
-  if [ "$CREATE_LABELS" = "y" ] || [ "$CREATE_LABELS" = "Y" ]; then
-    if [ -f "scripts/create-labels.sh" ]; then
-      bash scripts/create-labels.sh
-    else
-      echo -e "${YELLOW}Creando labels manualmente...${NC}"
-      gh label create "ready-to-merge" --color "0e8a16" --description "Ready for automatic merge" --force
-      gh label create "do-not-merge" --color "b60205" --description "Block automatic merge" --force
-      echo -e "${GREEN}✅ Labels creados${NC}"
-    fi
-  else
-    exit 1
-  fi
-fi
-
-echo ""
 echo -e "${CYAN}════════════════════════════════════════════════════${NC}"
 echo -e "${CYAN}  Configuración del Test${NC}"
 echo -e "${CYAN}════════════════════════════════════════════════════${NC}"
@@ -224,29 +189,29 @@ EOF
     cat > $TEST_FILE << 'EOF'
 # Next.js Application - Feature Auto-Merge Test
 
-This is a test application for validating the Feature Auto-Merge workflow.
+This is a test application for validating the native GitHub Auto-Merge functionality.
 
 ## Test Information
 
-- **Purpose**: Validate automatic merge workflow
-- **Strategy**: Feature branch with ready-to-merge label
+- **Purpose**: Validate native GitHub auto-merge workflow
+- **Strategy**: Branch protection + CI validation + manual auto-merge activation
 - **CI Checks**: Lint, Build, Security Scan
 
 ## How to Test
 
 1. Create feature branch
 2. Make changes
-3. Create PR with `ready-to-merge` label
-4. Wait for CI checks to pass
-5. Get approval
-6. Auto-merge activates automatically
+3. Create PR and wait for CI
+4. Get approval from reviewer
+5. Enable auto-merge: `gh pr merge --auto --squash <PR>`
+6. GitHub merges automatically when all conditions met
 
 ## Expected Behavior
 
-- ✅ CI runs automatically
-- ✅ Auto-labeling applies size and type labels
-- ✅ After approval, auto-merge enables
-- ✅ PR merges when all checks pass
+- ✅ CI runs automatically on PR creation
+- ✅ Branch protection enforces reviews and checks
+- ✅ Auto-merge enables when manually activated
+- ✅ PR merges when checks pass + approval + branch updated
 
 ---
 
@@ -261,11 +226,11 @@ echo -e "${BLUE}4️⃣  Haciendo commit...${NC}"
 git add $TEST_FILE
 COMMIT_MSG="feat: $TEST_DESCRIPTION
 
-This is a test commit to validate the Feature Auto-Merge workflow.
+This is a test commit to validate the native GitHub Auto-Merge functionality.
 
-- Tests auto-labeling
-- Tests CI validation
-- Tests auto-merge activation
+- Tests CI validation (lint, build, security)
+- Tests branch protection enforcement
+- Tests native auto-merge activation
 "
 git commit -m "$COMMIT_MSG"
 echo -e "  ${GREEN}✅${NC} Commit creado"
@@ -278,26 +243,25 @@ echo -e "  ${GREEN}✅${NC} Rama pusheada"
 # Paso 6: Crear PR
 echo -e "${BLUE}6️⃣  Creando Pull Request...${NC}"
 
-PR_BODY="## 🧪 Test de Auto-Merge
+PR_BODY="## 🧪 Test de Auto-Merge Nativo
 
-Este PR fue creado automáticamente para probar el workflow de Feature Auto-Merge.
+Este PR fue creado automáticamente para probar la funcionalidad nativa de auto-merge de GitHub.
 
 ### Cambios
 - $TEST_DESCRIPTION
 
 ### Validaciones Esperadas
 - [x] CI ejecuta automáticamente
-- [ ] Auto-labeling aplica labels (size/*, type)
-- [ ] Todos los checks pasan
+- [ ] Todos los checks pasan  
 - [ ] Reviewer aprueba el PR
-- [ ] Auto-merge se habilita automáticamente
-- [ ] PR se fusiona cuando todo pase
+- [ ] **Auto-merge nativo se habilita**
+- [ ] GitHub fusiona automáticamente cuando todo pase
 
 ### Instrucciones
 1. Espera a que el CI termine
 2. Revisa y aprueba este PR
-3. El auto-merge se activará automáticamente
-4. El PR se fusionará cuando todos los checks pasen
+3. Ejecuta: \`gh pr merge --auto --squash $PR_NUMBER\`
+4. GitHub fusionará automáticamente cuando todos los checks pasen
 
 ---
 *Test generado por: \`test-automerge.sh\`*
@@ -308,8 +272,7 @@ PR_URL=$(gh pr create \
   --base main \
   --head $BRANCH_NAME \
   --title "🧪 [TEST] $TEST_DESCRIPTION" \
-  --body "$PR_BODY" \
-  --label "ready-to-merge")
+  --body "$PR_BODY")
 
 echo -e "  ${GREEN}✅${NC} PR creado: $PR_URL"
 
@@ -328,19 +291,16 @@ echo ""
 echo "  1️⃣  Espera a que el CI termine (1-2 minutos)"
 echo "      Ver en: $PR_URL/checks"
 echo ""
-echo "  2️⃣  Verifica los labels auto-aplicados"
-echo "      Comando: gh pr view $PR_NUMBER --json labels"
-echo ""
-echo "  3️⃣  Aprueba el PR (simula revisión de código)"
+echo "  2️⃣  Aprueba el PR (simula revisión de código)"
 echo "      Comando: gh pr review $PR_NUMBER --approve"
 echo ""
-echo "  4️⃣  Observa el auto-merge activarse"
-echo "      El workflow detectará la aprobación y habilitará auto-merge"
+echo "  3️⃣  Habilita auto-merge nativo"
+echo "      Comando: gh pr merge --auto --squash $PR_NUMBER"
 echo ""
-echo "  5️⃣  El PR se fusionará automáticamente cuando:"
+echo "  4️⃣  GitHub fusionará automáticamente cuando:"
 echo "      - Todos los CI checks pasen ✅"
-echo "      - Tenga al menos 1 aprobación ✅"
-echo "      - Tenga el label 'ready-to-merge' ✅"
+echo "      - Tenga las aprobaciones requeridas ✅"
+echo "      - Rama esté actualizada ✅"
 echo ""
 echo -e "${BLUE}🔍 Comandos útiles para monitorear:${NC}"
 echo ""
@@ -350,11 +310,9 @@ echo ""
 echo "  # Ver checks en tiempo real"
 echo "  gh pr checks $PR_NUMBER --watch"
 echo ""
-echo "  # Ver logs del workflow de auto-merge"
-echo "  gh run list --workflow=\"Feature Auto-Merge\" --limit 1"
-echo ""
-echo "  # Aprobar el PR (cuando CI pase)"
-echo "  gh pr review $PR_NUMBER --approve --body \"LGTM! Auto-merge test approved.\""
+echo "  # Aprobar y habilitar auto-merge (cuando CI pase)"
+echo "  gh pr review $PR_NUMBER --approve"
+echo "  gh pr merge --auto --squash $PR_NUMBER"
 echo ""
 echo -e "${CYAN}════════════════════════════════════════════════════${NC}"
 echo ""
@@ -400,12 +358,17 @@ if [ "$AUTO_APPROVE" = "y" ] || [ "$AUTO_APPROVE" = "Y" ]; then
         gh pr review $PR_NUMBER --approve --body "✅ LGTM! All CI checks passed. Auto-merge test approved."
         echo -e "${GREEN}✅ PR aprobado${NC}"
         echo ""
-        echo -e "${YELLOW}🔄 El workflow de auto-merge debería activarse en breve...${NC}"
+        echo -e "${BLUE}🔀 Habilitando auto-merge nativo...${NC}"
+        gh pr merge --auto --squash $PR_NUMBER
+        echo -e "${GREEN}✅ Auto-merge habilitado${NC}"
+        echo ""
+        echo -e "${YELLOW}GitHub fusionará el PR automáticamente cuando:${NC}"
+        echo "  - ✅ Checks hayan pasado (ya completado)"
+        echo "  - ✅ Tenga aprobaciones requeridas (ya completado)"
+        echo "  - ✅ Rama esté actualizada"
         echo ""
         echo "  Monitorea el estado con:"
-        echo "  gh pr view $PR_NUMBER --json autoMergeRequest"
-        echo ""
-        echo "  El PR se fusionará automáticamente cuando el auto-merge se active."
+        echo "  gh pr view $PR_NUMBER"
         break
       fi
     fi
