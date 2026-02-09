@@ -6,11 +6,13 @@ if [ -z "$REPO" ]; then
   REPO=$(gh repo view --json nameWithOwner -q .nameWithOwner)
 fi
 
-echo "╔═══════════════════════════════════════╗"
-echo "║   Repository Configuration Report      ║"
-echo "╚═══════════════════════════════════════╝"
+echo "╔═══════════════════════════════════════════════╗"
+echo "║  Feature Auto-Merge Configuration Report     ║"
+echo "╚═══════════════════════════════════════════════╝"
 echo ""
 echo "📁 Repository: $REPO"
+echo ""
+echo "ℹ️  Strategy: Native GitHub Auto-Merge (no workflow)"
 echo ""
 
 echo "🔒 Branch Protection (main):"
@@ -58,20 +60,13 @@ gh api repos/$REPO/branches/main/protection 2>/dev/null | \
   echo "  None configured"
 
 echo ""
-echo "╔═══════════════════════════════════════╗"
-echo "║   Configuration Issues Found          ║"
-echo "╚═══════════════════════════════════════╝"
+echo "╔═══════════════════════════════════════════════╗"
+echo "║         Configuration Issues Found            ║"
+echo "╚═══════════════════════════════════════════════╝"
+echo ""
 
-# Check critical settings for Dependabot auto-merge
+# Check critical settings for Feature Auto-Merge (Native)
 ISSUES_FOUND=0
-
-CAN_APPROVE=$(gh api repos/$REPO/actions/permissions | jq -r '.can_approve_pull_request_reviews // false')
-if [ "$CAN_APPROVE" != "true" ]; then
-  echo "❌ CRITICAL: Actions cannot approve pull requests"
-  echo "   Fix: Settings → Actions → General → Workflow permissions:"
-  echo "   ✓ Allow GitHub Actions to create and approve pull requests"
-  ISSUES_FOUND=$((ISSUES_FOUND + 1))
-fi
 
 AUTO_MERGE=$(gh api repos/$REPO | jq -r '.allow_auto_merge')
 if [ "$AUTO_MERGE" != "true" ]; then
@@ -101,21 +96,30 @@ STATUS_CHECKS=$(gh api repos/$REPO/branches/main/protection 2>/dev/null | jq -r 
 if [ "$STATUS_CHECKS" -eq 0 ]; then
   echo "⚠️  WARNING: No required status checks configured"
   echo "   Fix: Settings → Branches → Branch protection rules → main:"
-  echo "   Add required checks: '📊 Analyze Dependabot PR', '🧪 Run CI Tests', '🔒 Security Scan'"
+  echo "   Add required checks: '🧪 Run Tests', '🔍 Lint', '🔒 Security Scan'"
   ISSUES_FOUND=$((ISSUES_FOUND + 1))
 fi
 
-DEPENDABOT_ENABLED=$(gh api repos/$REPO/vulnerability-alerts 2>/dev/null)
-if echo "$DEPENDABOT_ENABLED" | grep -q "disabled\|403"; then
-  echo "⚠️  WARNING: Dependabot alerts are disabled"
-  echo "   Fix: Settings → Security → Code security and analysis:"
-  echo "   ✓ Enable Dependabot alerts"
+# Verificar si hay requerimiento de PR reviews
+REQUIRE_REVIEWS=$(gh api repos/$REPO/branches/main/protection 2>/dev/null | jq -r '.required_pull_request_reviews != null')
+if [ "$REQUIRE_REVIEWS" != "true" ]; then
+  echo "⚠️  WARNING: Branch protection doesn't require PR reviews"
+  echo "   Fix: Settings → Branches → Branch protection rules → main:"
+  echo "   ✓ Require a pull request before merging"
+  echo "   ✓ Require approvals: 1 (minimum)"
   ISSUES_FOUND=$((ISSUES_FOUND + 1))
 fi
 
 echo ""
 if [ $ISSUES_FOUND -eq 0 ]; then
-  echo "✅ All configurations are correct for Dependabot auto-merge!"
+  echo "✅ All configurations are correct for Feature Auto-Merge!"
+  echo ""
+  echo "🚀 How to use:"
+  echo "   1. Create PR with feature branch"
+  echo "   2. Wait for CI to pass"
+  echo "   3. Get PR approved"
+  echo "   4. Enable auto-merge: gh pr merge --auto --squash <PR_NUMBER>"
+  echo "   5. GitHub will merge automatically when all conditions are met"
 else
   echo "Found $ISSUES_FOUND configuration issue(s) that may prevent auto-merge from working."
   echo ""

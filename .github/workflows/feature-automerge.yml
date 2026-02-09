@@ -64,9 +64,9 @@ jobs:
         if: steps.reviews.outputs.approved == 'true'
         uses: actions/checkout@v4
 
-      - name: 🔀 Enable auto-merge
+      - name: 🔀 Merge PR directly
         if: steps.reviews.outputs.approved == 'true'
-        run: gh pr merge --auto --squash "$PR_NUMBER"
+        run: gh pr merge --squash "$PR_NUMBER"
         env:
           PR_NUMBER: ${{ github.event.pull_request.number }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -74,5 +74,5 @@ jobs:
       - name: 📢 Notify success
         if: success()
         run: |
-          echo "✅ Auto-merge enabled for PR #${{ github.event.pull_request.number }}"
-          echo "Will merge automatically once all checks pass"
+          echo "✅ PR #${{ github.event.pull_request.number }} merged successfully!"
+          echo "All conditions met: approvals ✓, CI passed ✓, ready-to-merge label ✓"
