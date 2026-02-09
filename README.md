@@ -241,20 +241,23 @@ npm run dev
 
 ## 🔄 Cómo Funciona
 
-### Workflow de Auto-Merge (`feature-automerge.yml`)
+### Auto-Merge Nativo de GitHub
 
-- **Trigger**: Se ejecuta cuando:
-  - Se agrega/quita un label
-  - Se sincroniza el PR (nuevos commits)
-  - Se marca como ready for review
-- **Condiciones**:
-  - PR no es draft
-  - Tiene el label `ready-to-merge`
-  - NO tiene el label `do-not-merge`
-- **Proceso**:
-  1. Espera a que pasen todos los CI checks
-  2. Verifica que tenga al menos 1 aprobación
-  3. Habilita auto-merge con estrategia squash
+Esta implementación usa la **funcionalidad nativa de auto-merge de GitHub** (no requiere workflows adicionales):
+
+- **Activación**: Comando manual o desde UI:
+  ```bash
+  gh pr merge --auto --squash <PR_NUMBER>
+  ```
+- **Branch Protection Rules** controlan las condiciones:
+  - PR debe pasar todos los status checks requeridos
+  - PR debe tener el número de aprobaciones configurado
+  - Rama debe estar actualizada (opcional)
+- **Proceso Automático**:
+  1. Developer o reviewer habilita auto-merge
+  2. GitHub espera que se cumplan las condiciones
+  3. Cuando status checks pasan + tiene aprobaciones → **merge automático**
+  4. GitHub elimina la rama automáticamente (si está configurado)
 
 ### Workflow de CI (`ci.yml`)
 
@@ -267,12 +270,9 @@ npm run dev
   - Cancelación de runs previos del mismo PR
   - Ejecución en paralelo de jobs
 
-### � Comandos Útiles
+### Comandos Útiles
 
 ```bash
-# Ver labels del repositorio
-gh label list
-
 # Ver PRs abiertos
 gh pr list
 
@@ -282,61 +282,70 @@ gh pr view <PR_NUMBER>
 # Ver checks de un PR
 gh pr checks <PR_NUMBER>
 
-# Agregar label a un PR
-gh pr edit <PR_NUMBER> --add-label "ready-to-merge"
+# ⭐ Habilitar auto-merge en un PR
+gh pr merge --auto --squash <PR_NUMBER>
 
-# Ver workflows ejecutados
-gh run list --workflow="Feature Auto-Merge"
+# Deshabilitar auto-merge
+gh pr merge --disable-auto <PR_NUMBER>
+
+# Ver workflows de CI ejecutados
+gh run list --workflow="CI Tests"
 
 # Ver logs de un workflow
 gh run view <RUN_ID> --log
 
-# Ver detalles completos de un PR
-gh pr view <PR_NUMBER> --json labels,reviews,statusCheckRollup
+# Ver detalles completos de un PR (incluyendo auto-merge status)
+gh pr view <PR_NUMBER> --json labels,reviews,statusCheckRollup,autoMergeRequest
 ```
 
 ## 📊 Diagrama de Flujo
 
 ```mermaid
 graph TD
-    A[Desarrollador crea feature] --> B[Push a feature branch]
+    A[Developer crea feature] --> B[Push a feature branch]
     B --> C[Crea PR en GitHub]
     C --> D[CI ejecuta: lint, build, security]
     D --> E{CI pasa?}
     E -->|No| F[Fix issues y push]
     F --> D
-    E -->|Sí| G[Auto-labeling se aplica]
-    G --> H[Reviewer aprueba]
-    H --> I[Developer agrega ready-to-merge]
-    I --> J[AutoMerge workflow se ejecuta]
-    J --> K{Tiene aprobación?}
-    K -->|No| L[Espera aprobación]
-    K -->|Sí| M[Habilita auto-merge]
-    M --> N[PR se fusiona automáticamente]
+    E -->|Sí| G[Reviewer aprueba PR]
+    G --> H[Developer/Reviewer habilita auto-merge]
+    H --> I["gh pr merge --auto --squash"]
+    I --> J{Todas las condiciones OK?}
+    J -->|CI pasa + Aprobado| K[GitHub fusiona automáticamente]
+    J -->|Faltan checks| L[Espera a que pasen]
+    L --> J
+    K --> M[Branch eliminada automáticamente]
 ```
 
 ## 🛠️ Troubleshooting
 
-### El automerge no se habilita
+### El auto-merge no funciona
 
-**Verificar**:
+**Verificar Branch Protection Rules**:
 
-1. PR tiene label `ready-to-merge`
-2. PR NO tiene label `do-not-merge`
-3. PR no es draft
-4. Todos los CI checks pasan
-5. PR tiene al menos 1 aprobación
+1. Ir a **Settings > Branches**
+2. Verificar que `main` tiene:
+   - ✅ "Require status checks to pass"
+   - ✅ Status checks seleccionados: `quality-gates`, `lint`, `test`, `security`
+   - ✅ "Require approvals" (1 mínimo)
+3. Verificar que "Allow auto-merge" está habilitado en Settings > General
 
 ```bash
-gh pr view <PR_NUMBER> --json labels,reviews,statusCheckRollup
+# Ver configuración actual del PR
+gh pr view <PR_NUMBER> --json autoMergeRequest,statusCheckRollup,reviews
+
+# Ver si auto-merge está habilitado
+gh pr view <PR_NUMBER> --json autoMergeRequest
 ```
 
 **Causas comunes**:
 
-- Falta el label `ready-to-merge`
-- Tiene el label `do-not-merge`
-- CI checks fallaron
-- No tiene aprobaciones
+- Branch protection rules no configuradas correctamente
+- CI checks aún corriendo o fallaron
+- No tiene aprobaciones suficientes
+- Rama desactualizada (si se requiere estar up-to-date)
+- Auto-merge no fue habilitado con `gh pr merge --auto`
 
 ### CI falla en Next.js build
 
@@ -348,60 +357,60 @@ npm run lint
 npm run build
 ```
 
-### Labels no se aplican automáticamente
+### Auto-merge se deshabilita solo
 
-- Verificar que el workflow `auto-label.yml` esté activo
-- Verificar que `.github/labeler.yml` tiene las rutas correctas
-- Ver logs del workflow en Actions
+Esto ocurre cuando:
 
-### No aparecen los checks requeridos en branch protection
+- Se pushean nuevos commits (GitHub deshabilita auto-merge por seguridad)
+- **Solución**: Volver a habilitar después del commit:
+  ```bash
+  gh pr merge --auto --squash <PR_NUMBER>
+  ```
+
+### No aparecen los status checks en branch protection
 
 1. Haz al menos un commit y PR para que se ejecuten los workflows
 2. Después de la primera ejecución, los checks aparecerán en la lista
 3. Selecciónalos en Branch Protection
 
-## 🏷️ Sistema de Labels
+## 🏷️ Sistema de Labels (Opcional)
 
-### Labels de Control de Merge
+> **Nota**: Los labels NO son necesarios para el auto-merge nativo de GitHub.
+> Se pueden usar opcionalmente para organización del proyecto.
+
+### Labels Sugeridos (Opcional)
 
 | Label             | Color                  | Propósito                    |
 | ----------------- | ---------------------- | ---------------------------- |
-| `ready-to-merge`  | Verde (`0e8a16`)       | Habilita automerge           |
-| `do-not-merge`    | Rojo (`b60205`)        | Bloquea automerge            |
 | `breaking-change` | Rojo oscuro (`d73a4a`) | Marca cambios que rompen API |
 | `needs-review`    | Amarillo (`fbca04`)    | Requiere revisión adicional  |
+| `documentation`   | Azul (`0075ca`)        | Cambios en documentación     |
+| `dependencies`    | Verde (`0e8a16`)       | Actualizaciones de deps      |
 
-### Labels Automáticos
-
-| Label           | Cuándo se aplica                   |
-| --------------- | ---------------------------------- |
-| `documentation` | Cambios en archivos `.md`          |
-| `dependencies`  | Cambios en `package.json`          |
-| `ci/cd`         | Cambios en workflows               |
-| `frontend`      | Cambios en componentes             |
-| `size/*`        | Según cantidad de líneas cambiadas |
+Si deseas usar auto-labeling automático, puedes configurar el workflow `auto-label.yml` (ver submódulo `AutoMergeFeatureManaged`).
 
 ## 🔐 Seguridad
 
 ### Validaciones Pre-Merge
 
-El CI ejecuta:
+El CI ejecuta automáticamente:
 
 1. **ESLint**: Valida calidad de código
 2. **Build**: Asegura que el código compila
 3. **npm audit**: Detecta vulnerabilidades en dependencias
 4. **TruffleHog**: Escanea secretos hardcodeados
 
-### Condiciones de Automerge
+### Condiciones para Auto-Merge Nativo
 
-El automerge SOLO se activa si:
+El auto-merge se completa automáticamente cuando:
 
-- ✅ PR tiene label `ready-to-merge`
-- ✅ PR NO tiene label `do-not-merge`
-- ✅ PR no es draft
-- ✅ Todos los CI checks pasan
-- ✅ Tiene al menos 1 aprobación
-- ✅ No hay conflictos de merge
+- ✅ Status checks configurados en Branch Protection **pasan** (`quality-gates`, `lint`, `test`, `security`)
+- ✅ PR tiene el número de **aprobaciones requeridas** (configurado en Branch Protection)
+- ✅ Rama está **actualizada** con base (si se requiere en Branch Protection)
+- ✅ No hay **conflictos** de merge
+- ✅ PR **no es draft**
+
+Configurado en: **Settings > Branches > Branch protection rules**
 
 ## 📊 Ejemplo de Flujo Completo
 
