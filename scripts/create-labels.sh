@@ -18,12 +18,6 @@ if ! command -v gh &> /dev/null; then
     exit 1
 fi
 
-# Verificar que estamos en un repo git
-if [ ! -d .git ]; then
-    echo -e "${RED}❌ Error: No estás en un repositorio git${NC}"
-    exit 1
-fi
-
 # Labels de control de merge
 echo -e "${GREEN}📝 Creando labels de control de merge...${NC}"
 
