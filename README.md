@@ -1,276 +1,128 @@
-# Automerge de Features - Implementación de Ejemplo
+# Auto-Merge de Features Simplificado
 
-Este submódulo contiene una implementación completa de la estrategia de **Feature AutoMerge** usando la funcionalidad nativa de auto-merge de GitHub, validada con CI/CD.
+> Estrategia de fusión automática de features usando **auto-merge nativo de GitHub** + CI/CD
 
-## ✅ Estado del Submódulo
+## 🎯 ¿Qué es esto?
 
-- ✅ Aplicación Next.js en `/src/app`
-- ✅ CI/CD configurado (`.github/workflows/ci.yml`)
-- ✅ Sistema de auto-labeling (opcional)
-- ✅ Scripts de validación y testing
-- ✅ **Auto-merge nativo de GitHub** (no requiere workflow adicional)
+Un sistema simple para fusionar features automáticamente cuando:
 
-## 📁 Estructura del Proyecto
+- ✅ El código pasa todas las validaciones (lint, build, security)
+- ✅ Un reviewer aprueba el PR
+- ✅ No hay conflictos
 
-```
-.
-├── .github/
-│   ├── workflows/
-│   │   ├── ci.yml                 # CI/CD para validar cambios
-│   │   └── auto-label.yml         # Auto-etiquetado de PRs (opcional)
-│   └── labeler.yml                # Configuración de labels
-├── src/
-│   └── app/                       # Aplicación Next.js de ejemplo
-│       ├── app/                   # App Router de Next.js
-│       ├── public/                # Archivos estáticos
-│       └── package.json           # Dependencias de Next.js
-├── scripts/
-│   ├── check_repo_config.sh       # Validar configuración del repositorio
-│   ├── create-labels.sh           # Script para crear labels en GitHub (opcional)
-│   └── test-automerge.sh          # Script para ejecutar prueba completa
-└── README.md
-```
+**Sin workflows complejos. Solo GitHub nativo + CI básico.**
 
-## 🎯 Concepto: Auto-Merge Nativo de GitHub
-
-Esta estrategia utiliza la **funcionalidad nativa de auto-merge de GitHub**, sin necesidad de workflows adicionales:
-
-- ✅ **Simple**: Configuración directa en GitHub Settings
-- ✅ **Nativa**: Usa funcionalidad built-in de GitHub
-- ✅ **Eficiente**: No consume minutos de GitHub Actions adicionales
-- ✅ **Flexible**: Controlado vía Branch Protection Rules
-
-### ¿Cómo funciona?
-
-1. Developer crea PR y lo marca listo
-2. CI ejecuta automáticamente (lint, build, security)
-3. Reviewer aprueba el PR
-4. Developer (o reviewer) habilita auto-merge: `gh pr merge --auto --squash <PR>`
-5. **GitHub fusiona automáticamente** cuando:
-   - ✅ Todos los CI checks pasan
-   - ✅ Tiene aprobaciones requeridas
-   - ✅ Rama está actualizada
-   - ✅ No hay conflictos
-
-## 🚀 Inicio Rápido
-
-### Prueba Rápida (Recomendado)
-
-Para probar el sistema de auto-merge completo de forma automatizada:
+## ⚡ Inicio Rápido (2 minutos)
 
 ```bash
-cd AutoMergeFeature
-
-# 1. Verificar configuración del repositorio
+# 1. Verificar configuración
 ./scripts/check_repo_config.sh
 
-# 2. Crear labels (si no existen)
-./scripts/create-labels.sh
-
-# 3. Ejecutar test completo automatizado
+# 2. Ejecutar prueba completa
 ./scripts/test-automerge.sh
 ```
 
-El script `test-automerge.sh` hará automáticamente:
+El script creará un PR de prueba y habilitará auto-merge. GitHub lo fusionará automáticamente cuando pase el CI.
 
-- ✅ Crear una rama de feature
-- ✅ Hacer un cambio de prueba
-- ✅ Crear un PR
-- ✅ Esperar a que CI pase (opcional)
-- ✅ Aprobar el PR automáticamente (opcional)
-- ✅ **Habilitar auto-merge nativo**
-
-**Resultado esperado**: GitHub fusionará el PR automáticamente cuando todos los checks pasen.
-
----
-
-## 🚀 Guía de Implementación Paso a Paso
-
-### 1. Configuración Inicial de GitHub (5 minutos)
-
-#### A. Habilitar Auto-Merge
-
-Ir a **Settings > General > Pull Requests**:
-
-- ☑ **Allow auto-merge**
-- ☑ **Automatically delete head branches** (opcional)
-
-#### B. Permisos de GitHub Actions (solo para CI)
-
-Ir a **Settings > Actions > General > Workflow permissions**:
-
-- ☑ **Read and write permissions** (para que CI pueda ejecutarse)
-
-### 2. Configurar Branch Protection (5 minutos)
-
-**Settings > Branches > Add branch protection rule**:
-
-Para `main`:
+## 📁 Estructura
 
 ```
-Branch name pattern: main
+├── .github/workflows/ci.yml    # CI: lint, build, security
+├── src/app/                    # Aplicación Next.js de ejemplo
+└── scripts/
+    ├── check_repo_config.sh    # Validar configuración
+    └── test-automerge.sh       # Prueba automatizada
+```
 
-☑ Require a pull request before merging
-  ☑ Require approvals: 1
-  ☐ Dismiss stale reviews when new commits are pushed (opcional)
-  ☑ Require review from Code Owners (opcional)
+## 🔧 Cómo Funciona
+
+```mermaid
+graph LR
+    A[Crear PR] --> B[CI valida]
+    B --> C[Reviewer aprueba]
+    C --> D[Habilitar auto-merge]
+    D --> E[GitHub fusiona ✨]
+```
+
+1. **Developer** crea PR desde feature branch
+2. **CI** ejecuta automáticamente validaciones
+3. **Reviewer** aprueba el PR
+4. **Developer/Reviewer** habilita auto-merge
+5. **GitHub** fusiona cuando todos los checks pasan
+
+## �️ Configuración Inicial (10 minutos)
+
+### Paso 1: Habilitar Auto-Merge en GitHub
+
+**Settings > General > Pull Requests**:
+
+- ☑ Allow auto-merge
+- ☑ Automatically delete head branches
+
+### Paso 2: Configurar Branch Protection
+
+**Settings > Branches > Add rule** para `main`:
+
+```
+☑ Require pull request before merging
+  └─ ☑ Require approvals: 1
 
 ☑ Require status checks to pass before merging
-  ☑ Require branches to be up to date before merging
+  └─ ☑ Require branches to be up to date
+  └─ Status checks: quality-gates, lint, test, security
 
-  Status checks required (agregar después del primer CI run):
-  - 🧪 Run Tests
-  - 🔍 Lint
-  - 🔒 Security Scan
-  - ✅ Quality Gates
-
-☑ Require conversation resolution before merging
 ☑ Allow auto-merge
-☑ Automatically delete head branches
-
-☐ Require linear history (opcional)
-☐ Require signed commits (opcional)
 ```
 
-**⚠️ Nota**: Los status checks aparecerán disponibles solo después de ejecutar los workflows por primera vez.
+> **Nota**: Los status checks aparecen después del primer CI run.
 
-### 4. Primera Prueba - Feature con AutoMerge (10 minutos)
+### Paso 3: Permisos de GitHub Actions
 
-#### Paso 1: Crear rama de feature
+**Settings > Actions > General > Workflow permissions**:
+
+- ☑ Read and write permissions
+
+## 🚀 Flujo de Trabajo Completo
+
+### Crear y fusionar una feature
 
 ```bash
-git checkout main
-git pull origin main
-git checkout -b feature/test-automerge
-```
+# 1. Crear rama
+git checkout -b feature/nueva-funcionalidad
 
-#### Paso 2: Hacer un cambio en Next.js
-
-```bash
-cd src/app/app
-
-# Crear nuevo archivo de features
-cat > features.ts << 'EOF'
-// Feature flags para testing de automerge
-export const FEATURES = {
-  autoMergeEnabled: true,
-  testFeature: {
-    name: 'Test AutoMerge',
-    enabled: true,
-    description: 'Feature para validar el sistema de automerge',
-  },
-} as const;
-EOF
-
-cd ../../..
-```
-
-#### Paso 3: Commit y push
-
-```bash
-git add .
-git commit -m "feat: Add feature flags for automerge testing"
-git push -u origin feature/test-automerge
-```
-
-#### Paso 4: Crear Pull Request en GitHub
-
-1. Ir a GitHub
-2. Crear PR: `feature/test-automerge` → `main`
-3. Título: `feat: Add feature flags for automerge testing`
-4. Descripción:
-
-```markdown
-## 🎯 Propósito
-
-Agregar feature flags para probar el sistema de automerge
-
-## ✅ Cambios
-
-- Nuevo archivo `features.ts` con configuración de features
-
-## 🧪 Testing
-
-- Build de Next.js pasa
-- Linter pasa
-```
-
-#### Paso 5: Observar el Auto-Labeling
-
-Después de crear el PR, observa:
-
-- Se aplicará automáticamente el label `size/xs` o `size/s`
-- Si modificaste archivos `.md`, tendrá `documentation`
-- Si modificaste `package.json`, tendrá `dependencies`
-
-#### Paso 6: Esperar CI y Aprobar
-
-1. Espera que pasen todos los CI checks (2-3 minutos)
-2. Un reviewer aprueba el PR
-3. **Agrega el label `ready-to-merge`** manualmente
-
-#### Paso 7: Observar el AutoMerge
-
-1. Ve a **Actions** en GitHub
-2. Se ejecutará `✨ Feature Auto-Merge`
-3. El workflow:
-   - Esperará a que pasen todos los checks
-   - Verificará que tenga 1+ aprobación
-   - Habilitará auto-merge automáticamente
-4. El PR se fusionará automáticamente cuando esté listo
-
-### 5. Validar el CI (Opcional)
-
-Para verificar que el CI funciona localmente:
-
-```bash
+# 2. Hacer cambios en el código
 cd src/app
+# ... editar archivos ...
 
-# Instalar dependencias
-npm install
+# 3. Commit y push
+git add .
+git commit -m "feat: agregar nueva funcionalidad"
+git push -u origin feature/nueva-funcionalidad
 
-# Ejecutar linter
-npm run lint
+# 4. Crear PR en GitHub UI
+# 5. Esperar que CI pase (automático)
+# 6. Solicitar review
+# 7. Después de aprobación, habilitar auto-merge:
 
-# Build de Next.js
-npm run build
+gh pr merge --auto --squash <PR_NUMBER>
 
-# Iniciar en desarrollo
-npm run dev
+# 8. GitHub fusiona automáticamente cuando todo está OK ✨
 ```
 
-## 🔄 Cómo Funciona
+## 🔍 Validaciones del CI
 
-### Auto-Merge Nativo de GitHub
+El workflow `.github/workflows/ci.yml` valida automáticamente:
 
-Esta implementación usa la **funcionalidad nativa de auto-merge de GitHub** (no requiere workflows adicionales):
+| Job              | Validación                   |
+| ---------------- | ---------------------------- |
+| 🔍 Lint          | ESLint en código Next.js     |
+| 🧪 Test          | Build de Next.js             |
+| 🔒 Security      | npm audit + scan de secretos |
+| ✅ Quality Gates | Resumen de validaciones      |
 
-- **Activación**: Comando manual o desde UI:
-  ```bash
-  gh pr merge --auto --squash <PR_NUMBER>
-  ```
-- **Branch Protection Rules** controlan las condiciones:
-  - PR debe pasar todos los status checks requeridos
-  - PR debe tener el número de aprobaciones configurado
-  - Rama debe estar actualizada (opcional)
-- **Proceso Automático**:
-  1. Developer o reviewer habilita auto-merge
-  2. GitHub espera que se cumplan las condiciones
-  3. Cuando status checks pasan + tiene aprobaciones → **merge automático**
-  4. GitHub elimina la rama automáticamente (si está configurado)
+**Todos deben pasar** para que el auto-merge se complete.
 
-### Workflow de CI (`ci.yml`)
-
-- **Validaciones**:
-  - **Lint**: ESLint en la aplicación Next.js
-  - **Build**: Compilación de Next.js
-  - **Security**: Audit de npm + scan de secretos
-- **Optimizaciones**:
-  - Cache de dependencias
-  - Cancelación de runs previos del mismo PR
-  - Ejecución en paralelo de jobs
-
-### Comandos Útiles
+## 💡 Comandos Útiles
 
 ```bash
 # Ver PRs abiertos
@@ -279,78 +131,36 @@ gh pr list
 # Ver estado de un PR
 gh pr view <PR_NUMBER>
 
-# Ver checks de un PR
-gh pr checks <PR_NUMBER>
-
-# ⭐ Habilitar auto-merge en un PR
+# Habilitar auto-merge
 gh pr merge --auto --squash <PR_NUMBER>
 
 # Deshabilitar auto-merge
 gh pr merge --disable-auto <PR_NUMBER>
 
-# Ver workflows de CI ejecutados
-gh run list --workflow="CI Tests"
-
-# Ver logs de un workflow
-gh run view <RUN_ID> --log
-
-# Ver detalles completos de un PR (incluyendo auto-merge status)
-gh pr view <PR_NUMBER> --json labels,reviews,statusCheckRollup,autoMergeRequest
+# Ver checks de CI
+gh pr checks <PR_NUMBER>
 ```
 
-## 📊 Diagrama de Flujo
+## �️ Troubleshooting
 
-```mermaid
-graph TD
-    A[Developer crea feature] --> B[Push a feature branch]
-    B --> C[Crea PR en GitHub]
-    C --> D[CI ejecuta: lint, build, security]
-    D --> E{CI pasa?}
-    E -->|No| F[Fix issues y push]
-    F --> D
-    E -->|Sí| G[Reviewer aprueba PR]
-    G --> H[Developer/Reviewer habilita auto-merge]
-    H --> I["gh pr merge --auto --squash"]
-    I --> J{Todas las condiciones OK?}
-    J -->|CI pasa + Aprobado| K[GitHub fusiona automáticamente]
-    J -->|Faltan checks| L[Espera a que pasen]
-    L --> J
-    K --> M[Branch eliminada automáticamente]
-```
+### El auto-merge no se activa
 
-## 🛠️ Troubleshooting
-
-### El auto-merge no funciona
-
-**Verificar Branch Protection Rules**:
-
-1. Ir a **Settings > Branches**
-2. Verificar que `main` tiene:
-   - ✅ "Require status checks to pass"
-   - ✅ Status checks seleccionados: `quality-gates`, `lint`, `test`, `security`
-   - ✅ "Require approvals" (1 mínimo)
-3. Verificar que "Allow auto-merge" está habilitado en Settings > General
+**Verificar que**:
+- ✅ Auto-merge está habilitado en Settings > General
+- ✅ Branch protection configurado correctamente
+- ✅ Todos los CI checks pasaron
+- ✅ PR tiene aprobación requerida
+- ✅ No hay conflictos de merge
 
 ```bash
-# Ver configuración actual del PR
+# Ver estado completo del PR
 gh pr view <PR_NUMBER> --json autoMergeRequest,statusCheckRollup,reviews
-
-# Ver si auto-merge está habilitado
-gh pr view <PR_NUMBER> --json autoMergeRequest
 ```
 
-**Causas comunes**:
-
-- Branch protection rules no configuradas correctamente
-- CI checks aún corriendo o fallaron
-- No tiene aprobaciones suficientes
-- Rama desactualizada (si se requiere estar up-to-date)
-- Auto-merge no fue habilitado con `gh pr merge --auto`
-
-### CI falla en Next.js build
+### CI falla
 
 ```bash
-# Verificar localmente
+# Validar localmente antes de push
 cd src/app
 npm install
 npm run lint
@@ -359,181 +169,75 @@ npm run build
 
 ### Auto-merge se deshabilita solo
 
-Esto ocurre cuando:
-
-- Se pushean nuevos commits (GitHub deshabilita auto-merge por seguridad)
-- **Solución**: Volver a habilitar después del commit:
-  ```bash
-  gh pr merge --auto --squash <PR_NUMBER>
-  ```
-
-### No aparecen los status checks en branch protection
-
-1. Haz al menos un commit y PR para que se ejecuten los workflows
-2. Después de la primera ejecución, los checks aparecerán en la lista
-3. Selecciónalos en Branch Protection
-
-## 🏷️ Sistema de Labels (Opcional)
-
-> **Nota**: Los labels NO son necesarios para el auto-merge nativo de GitHub.
-> Se pueden usar opcionalmente para organización del proyecto.
-
-### Labels Sugeridos (Opcional)
-
-| Label             | Color                  | Propósito                    |
-| ----------------- | ---------------------- | ---------------------------- |
-| `breaking-change` | Rojo oscuro (`d73a4a`) | Marca cambios que rompen API |
-| `needs-review`    | Amarillo (`fbca04`)    | Requiere revisión adicional  |
-| `documentation`   | Azul (`0075ca`)        | Cambios en documentación     |
-| `dependencies`    | Verde (`0e8a16`)       | Actualizaciones de deps      |
-
-Si deseas usar auto-labeling automático, puedes configurar el workflow `auto-label.yml` (ver submódulo `AutoMergeFeatureManaged`).
-
-## 🔐 Seguridad
-
-### Validaciones Pre-Merge
-
-El CI ejecuta automáticamente:
-
-1. **ESLint**: Valida calidad de código
-2. **Build**: Asegura que el código compila
-3. **npm audit**: Detecta vulnerabilidades en dependencias
-4. **TruffleHog**: Escanea secretos hardcodeados
-
-### Condiciones para Auto-Merge Nativo
-
-El auto-merge se completa automáticamente cuando:
-
-- ✅ Status checks configurados en Branch Protection **pasan** (`quality-gates`, `lint`, `test`, `security`)
-- ✅ PR tiene el número de **aprobaciones requeridas** (configurado en Branch Protection)
-- ✅ Rama está **actualizada** con base (si se requiere en Branch Protection)
-- ✅ No hay **conflictos** de merge
-- ✅ PR **no es draft**
-
-Configurado en: **Settings > Branches > Branch protection rules**
-
-## 📊 Ejemplo de Flujo Completo
+GitHub deshabilita auto-merge cuando se pushean nuevos commits. 
+**Solución**: Re-habilitarlo después del commit:
 
 ```bash
-# 1. Crear feature
-git checkout main
-git pull
-git checkout -b feature/user-dashboard
-
-# 2. Desarrollar feature
-cd src/app
-# ... hacer cambios ...
-cd ../..
-
-git add .
-git commit -m "feat: Add user dashboard component"
-git push -u origin feature/user-dashboard
-
-# 3. Crear PR en GitHub
-# 4. CI valida automáticamente
-# 5. Reviewer aprueba
-# 6. Agregar label "ready-to-merge"
-# 7. Automerge se habilita automáticamente
-# 8. PR se fusiona cuando todos los checks pasen
+gh pr merge --auto --squash <PR_NUMBER>
 ```
 
-## 🛠️ Troubleshooting
+## 📋 Buenas Prácticas
 
-### El automerge no se activa
+**Naming de Branches**:
+- Features: `feature/descripcion-corta`
+- Bugfixes: `fix/descripcion-corta`
+- Docs: `docs/descripcion-corta`
 
-**Verificar**:
+**Commits**:
+- Usar [conventional commits](https://www.conventionalcommits.org/):
+  - `feat:` nueva funcionalidad
+  - `fix:` corrección de bugs
+  - `docs:` documentación
+  - `refactor:` refactorización
+  - `test:` tests
 
-````bash
-# Ver labels del PR
-gh pr view <PR_NUMBER> --json labels
+**Pull Requests**:
+- Mantener PRs pequeños (< 400 líneas)
+- Un PR = Una feature/fix
+- Descripción clara del cambio
+- Solicitar review temprano
 
-# Ver estado de checks
-gh 🎯 Resultado Esperado
-
-Después de completar la implementación:
-
-1. ✅ Tendrás todos los labels configurados
-2. ✅ Branch protection configurado en `main`
-3. ✅ Los PRs se auto-etiquetarán por tamaño y tipo
-4. ✅ Los PRs con label `ready-to-merge` se fusionarán automáticamente
-5. ✅ El CI validará lint, build y security en cada PR
+**Auto-Merge**:
+- Habilitar solo cuando el PR esté 100% listo
+- Verificar que CI pasa localmente antes de push
+- Responder a comentarios antes de fusionar
 
 ## 🔗 Recursos
 
-- [Documentación completa](../../docs/FeatureAutoMerge.md)
-- [GitHub Auto-merge](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/incorporating-changes-from-a-pull-request/automatically-merging-a-pull-request)
-- [Branch Protection](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches)
-- [GitHub Actions Labeler](https://github.com/actions/labeler)
+- [GitHub Auto-merge Docs](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/incorporating-changes-from-a-pull-request/automatically-merging-a-pull-request)
+- [Branch Protection Rules](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches)
+- [GitHub Actions](https://docs.github.com/en/actions)
+- [Conventional Commits](https://www.conventionalcommits.org/)
 
-## 🎉 Próximos Pasos Sugeridos
+## 🎯 Qué Hace Este Sistema
 
-- Configurar CODEOWNERS para reviews automáticos
-- Agregar tests unitarios a la aplicación Next.js
-- Configurar notificaciones de Slack para merges
-- Implementar feature flags en la aplicación
+✅ **CI Automático**: Valida cada PR con lint, build y security  
+✅ **Auto-merge Nativo**: GitHub fusiona cuando todo está OK  
+✅ **Sin Complicaciones**: No requiere workflows adicionales  
+✅ **Seguro**: Multiple validaciones antes de fusionar  
+✅ **Rápido**: Reduce tiempo de espera en merges  
 
-**Causas comunes**:
-- Falta el label `ready-to-merge`
-- Tiene el label `do-not-merge`
-- CI checks fallaron
-- No tiene aprobaciones
+## 📊 Comparación con Otras Estrategias
 
-### CI falla en Next.js build
+| Feature | Este Submódulo | AutoMergeFeatureManaged |
+|---------|----------------|------------------------|
+| Auto-merge | ✅ Nativo GitHub | ✅ Workflow custom |
+| Labels automáticos | ❌ | ✅ |
+| Complejidad | Baja | Media |
+| Workflows extra | 1 (CI) | 3 (CI + Label + Merge) |
+| Mejor para | Equipos pequeños | Equipos grandes |
 
-```bash
-# Verificar localmente
-cd src/app
-npm install
-npm run lint
-npm run build
-````
+## 📝 Próximos Pasos
 
-### Conflictos de Merge
+Después de implementar esta estrategia, considera:
 
-Si hay conflictos, el automerge NO se ejecutará. Resolver manualmente:
-
-```bash
-git checkout feature/mi-feature
-git fetch origin
-git merge origin/main
-# Resolver conflictos
-git add .
-git commit
-git push
-```
-
-## 📝 Buenas Prácticas
-
-1. **Naming Conventions**:
-   - Features: `feature/descripcion-corta`
-   - Bugfixes: `fix/descripcion-corta`
-   - Docs: `docs/descripcion-corta`
-
-2. **PR Size**:
-   - Mantener PRs pequeños (< 400 líneas)
-   - Un PR = Una feature/fix
-
-3. **Commits**:
-   - Usar conventional commits: `feat:`, `fix:`, `docs:`, etc.
-
-4. **Labels**:
-   - Agregar `ready-to-merge` solo cuando esté 100% listo
-   - Usar `do-not-merge` si necesitas más tiempo
-
-5. **Reviews**:
-   - Solicitar reviews tempranas para feedback rápido
-   - Responder a comentarios antes de marcar como ready
-
-## 🔗 Recursos
-
-- [Documentación completa](../../docs/FeatureAutoMerge.md)
-- [GitHub Auto-merge](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/incorporating-changes-from-a-pull-request/automatically-merging-a-pull-request)
-- [Branch Protection](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches)
-
-## 📄 Licencia
-
-MIT - Ver [LICENSE](LICENSE)
+1. ✅ Agregar tests unitarios a la app Next.js
+2. ✅ Configurar CODEOWNERS para reviews automáticos
+3. ✅ Implementar feature flags
+4. ✅ Agregar notificaciones (Slack/Discord)
 
 ---
 
-**Nota**: Este es un ejemplo educativo. Asegúrate de tener una suite de tests robusta antes de usar automerge en producción.
+**Nota**: Este es un ejemplo educativo. Para producción, asegúrate de tener una suite de tests completa.
+
+📄 **Licencia**: MIT - Ver [LICENSE](LICENSE)
