@@ -169,7 +169,47 @@ echo -e "${BLUE}═════════════════════�
 echo -e "${GREEN}✅ Rama lista: $BRANCH_NAME${NC}"
 echo -e "${BLUE}════════════════════════════════════════════${NC}"
 echo ""
-echo "Ahora crea el PR manualmente con:"
-echo ""
-echo "  gh pr create --base main --head $BRANCH_NAME"
-echo ""
+
+# Crea la PR automáticamente
+read -p "¿Crear PR con auto-merge? (y/n): " CREATE_PR
+if [ "$CREATE_PR" = "y" ]; then
+  echo -e "${GREEN}6️⃣  Creando PR...${NC}"
+  PR_URL=$(gh pr create --base main --head $BRANCH_NAME --title "$DESCRIPTION" --body "🤖 Test PR para validar GitHub Auto-Merge nativo
+
+Este PR debe mergearse automáticamente cuando:
+- ✅ CI pase (quality-gates)  
+- ✅ Tenga 1 aprobación
+
+Para habilitar auto-merge manualmente:
+\`\`\`bash
+gh pr merge --auto --squash <PR_NUMBER>
+\`\`\`")
+  echo -e "  ${GREEN}✅${NC} PR creada"
+  
+  # Habilitar auto-merge nativo
+  echo -e "${GREEN}7️⃣  Habilitando auto-merge nativo...${NC}"
+  sleep 2  # Esperar a que GitHub procese la PR
+  PR_NUMBER=$(gh pr view $BRANCH_NAME --json number -q .number)
+  
+  if gh pr merge --auto --squash "$PR_NUMBER" 2>/dev/null; then
+    echo -e "  ${GREEN}✅${NC} Auto-merge habilitado!"
+    echo ""
+    echo -e "${YELLOW}⏳ El PR se mergeará automáticamente cuando:${NC}"
+    echo "   1. El check 'quality-gates' pase ✓"
+    echo "   2. Tenga 1 aprobación ✓"
+  else
+    echo -e "  ${YELLOW}⚠️${NC}  No se pudo habilitar auto-merge automáticamente"
+    echo "     Posible causa: falta configurar branch protection rules"
+    echo ""
+    echo "  Habilítalo manualmente:"
+    echo "    gh pr merge --auto --squash $PR_NUMBER"
+  fi
+  
+  echo ""
+  echo -e "${BLUE}🔗 PR: $PR_URL${NC}"
+else
+  echo "Crea el PR manualmente:"
+  echo ""
+  echo "  gh pr create --base main --head $BRANCH_NAME"
+  echo "  gh pr merge --auto --squash <PR_NUMBER>"
+fi
