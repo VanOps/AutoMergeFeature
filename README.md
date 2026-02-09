@@ -26,9 +26,43 @@ Este submódulo contiene una implementación completa de la estrategia de **Feat
 │       ├── public/                # Archivos estáticos
 │       └── package.json           # Dependencias de Next.js
 ├── scripts/
-│   └── create-labels.sh           # Script para crear labels en GitHub
+│   ├── check_repo_config.sh       # Validar configuración del repositorio
+│   ├── create-labels.sh           # Script para crear labels en GitHub
+│   └── test-automerge.sh          # Script para ejecutar prueba completa
 └── README.md
 ```
+
+## 🚀 Inicio Rápido
+
+### Prueba Rápida (Recomendado)
+
+Para probar el sistema de auto-merge completo de forma automatizada:
+
+```bash
+cd AutoMergeFeature
+
+# 1. Verificar configuración del repositorio
+./scripts/check_repo_config.sh
+
+# 2. Crear labels (si no existen)
+./scripts/create-labels.sh
+
+# 3. Ejecutar test completo automatizado
+./scripts/test-automerge.sh
+```
+
+El script `test-automerge.sh` hará automáticamente:
+
+- ✅ Crear una rama de feature
+- ✅ Hacer un cambio de prueba
+- ✅ Crear un PR con el label `ready-to-merge`
+- ✅ Esperar a que CI pase (opcional)
+- ✅ Aprobar el PR automáticamente (opcional)
+- ✅ Activar auto-merge
+
+**Resultado esperado**: El PR se fusionará automáticamente cuando todos los checks pasen.
+
+---
 
 ## 🚀 Guía de Implementación Paso a Paso
 
@@ -37,11 +71,13 @@ Este submódulo contiene una implementación completa de la estrategia de **Feat
 #### A. Habilitar Auto-Merge
 
 Ir a **Settings > General > Pull Requests**:
+
 - ☑ **Allow auto-merge**
 
 #### B. Permisos de GitHub Actions
 
 Ir a **Settings > Actions > General > Workflow permissions**:
+
 - ☑ **Read and write permissions**
 - ☑ **Allow GitHub Actions to create and approve pull requests**
 
@@ -57,12 +93,14 @@ cd AutoMergeFeature
 Esto creará automáticamente:
 
 **Labels de Control**:
+
 - `ready-to-merge` (verde) - Habilita automerge
 - `do-not-merge` (rojo) - Bloquea automerge
 - `breaking-change` (rojo oscuro) - Cambios que rompen API
 - `needs-review` (amarillo) - Requiere revisión adicional
 
 **Labels Automáticos**:
+
 - `documentation`, `dependencies`, `ci/cd`, `frontend`, `config`
 - `size/xs`, `size/s`, `size/m`, `size/l`, `size/xl`
 
@@ -80,6 +118,7 @@ gh label create "needs-review" --color "fbca04" --description "Requires addition
 **Settings > Branches > Add branch protection rule**:
 
 Para `main`:
+
 ```
 Branch name pattern: main
 
@@ -90,7 +129,7 @@ Branch name pattern: main
 
 ☑ Require status checks to pass before merging
   ☑ Require branches to be up to date before merging
-  
+
   Status checks required (agregar después del primer CI run):
   - 🧪 Run Tests
   - 🔍 Lint
@@ -152,14 +191,18 @@ git push -u origin feature/test-automerge
 2. Crear PR: `feature/test-automerge` → `main`
 3. Título: `feat: Add feature flags for automerge testing`
 4. Descripción:
+
 ```markdown
 ## 🎯 Propósito
+
 Agregar feature flags para probar el sistema de automerge
 
 ## ✅ Cambios
+
 - Nuevo archivo `features.ts` con configuración de features
 
 ## 🧪 Testing
+
 - Build de Next.js pasa
 - Linter pasa
 ```
@@ -167,6 +210,7 @@ Agregar feature flags para probar el sistema de automerge
 #### Paso 5: Observar el Auto-Labeling
 
 Después de crear el PR, observa:
+
 - Se aplicará automáticamente el label `size/xs` o `size/s`
 - Si modificaste archivos `.md`, tendrá `documentation`
 - Si modificaste `package.json`, tendrá `dependencies`
@@ -215,12 +259,10 @@ npm run dev
   - Se agrega/quita un label
   - Se sincroniza el PR (nuevos commits)
   - Se marca como ready for review
-  
 - **Condiciones**:
   - PR no es draft
   - Tiene el label `ready-to-merge`
   - NO tiene el label `do-not-merge`
-  
 - **Proceso**:
   1. Espera a que pasen todos los CI checks
   2. Verifica que tenga al menos 1 aprobación
@@ -232,7 +274,6 @@ npm run dev
   - **Lint**: ESLint en la aplicación Next.js
   - **Build**: Compilación de Next.js
   - **Security**: Audit de npm + scan de secretos
-  
 - **Optimizaciones**:
   - Cache de dependencias
   - Cancelación de runs previos del mismo PR
@@ -291,6 +332,7 @@ graph TD
 ### El automerge no se habilita
 
 **Verificar**:
+
 1. PR tiene label `ready-to-merge`
 2. PR NO tiene label `do-not-merge`
 3. PR no es draft
@@ -302,6 +344,7 @@ gh pr view <PR_NUMBER> --json labels,reviews,statusCheckRollup
 ```
 
 **Causas comunes**:
+
 - Falta el label `ready-to-merge`
 - Tiene el label `do-not-merge`
 - CI checks fallaron
@@ -333,22 +376,22 @@ npm run build
 
 ### Labels de Control de Merge
 
-| Label | Color | Propósito |
-|-------|-------|-----------|
-| `ready-to-merge` | Verde (`0e8a16`) | Habilita automerge |
-| `do-not-merge` | Rojo (`b60205`) | Bloquea automerge |
+| Label             | Color                  | Propósito                    |
+| ----------------- | ---------------------- | ---------------------------- |
+| `ready-to-merge`  | Verde (`0e8a16`)       | Habilita automerge           |
+| `do-not-merge`    | Rojo (`b60205`)        | Bloquea automerge            |
 | `breaking-change` | Rojo oscuro (`d73a4a`) | Marca cambios que rompen API |
-| `needs-review` | Amarillo (`fbca04`) | Requiere revisión adicional |
+| `needs-review`    | Amarillo (`fbca04`)    | Requiere revisión adicional  |
 
 ### Labels Automáticos
 
-| Label | Cuándo se aplica |
-|-------|------------------|
-| `documentation` | Cambios en archivos `.md` |
-| `dependencies` | Cambios en `package.json` |
-| `ci/cd` | Cambios en workflows |
-| `frontend` | Cambios en componentes |
-| `size/*` | Según cantidad de líneas cambiadas |
+| Label           | Cuándo se aplica                   |
+| --------------- | ---------------------------------- |
+| `documentation` | Cambios en archivos `.md`          |
+| `dependencies`  | Cambios en `package.json`          |
+| `ci/cd`         | Cambios en workflows               |
+| `frontend`      | Cambios en componentes             |
+| `size/*`        | Según cantidad de líneas cambiadas |
 
 ## 🔐 Seguridad
 
@@ -364,6 +407,7 @@ El CI ejecuta:
 ### Condiciones de Automerge
 
 El automerge SOLO se activa si:
+
 - ✅ PR tiene label `ready-to-merge`
 - ✅ PR NO tiene label `do-not-merge`
 - ✅ PR no es draft
@@ -402,7 +446,7 @@ git push -u origin feature/user-dashboard
 
 **Verificar**:
 
-```bash
+````bash
 # Ver labels del PR
 gh pr view <PR_NUMBER> --json labels
 
@@ -445,7 +489,7 @@ cd src/app
 npm install
 npm run lint
 npm run build
-```
+````
 
 ### Conflictos de Merge
 
